@@ -1,0 +1,330 @@
+EXPERIMENT 2:
+
+Prepare project.v, project_tb.v and constraints.sdc files. These files should be Xcelium, Genus, Innovus and Conformal compatible.
+Use this command for Part B of experiment in terminal:
+Open Cadence By source/install/chs
+xrun rca.v rca_tb.v -timescale 1ns/1ps -access +rwc -gui
+Select the ‘_tb” option on the left side of GUI.
+Right click and choose ‘Send to Waveform Window’
+Press Run button and ‘=’ button if not sized correctly.
+For Part A:
+xrun project.v -access +rwc -gui
+Select the ‘_tb” option on the left side of GUI.
+Right click and choose ‘Send to Waveform Window’.
+//////////////////
+
+EXPERIMENT 3:
+
+Prepare project.v and constraints.sdc files. 
+Enter genus in terminal.
+Type the following commands in order:
+read_lib /home/install/FOUNDRY/digital/180nm/dig/lib/slow.lib
+read_hdl 4rca.v
+elaborate rca_4bit                     (module name)
+read_sdc constraints.sdc
+syn_gen
+syn_map
+syn_opt
+report_area > area.rpt
+report_power > power.rpt
+report_timing > timing.rpt
+write_hdl > rca_synth.v
+write_sdc > rca_synth.sdc
+exit
+After this, there should be area.rpt, power.rpt, timing.rpt, project_synth.v and project_synth.sdc in your directory.
+
+
+EXPERIMENT 4:
+
+Prepare project_synth.v and project_synth.sdc files. 
+Type innovus in terminal. After GUI opens, click Import Design in File…
+Choose your project_synth.v in your Verilog block.
+Select LEF in the 2nd block and choose all.lef. You can find this by going back in the directories. -> /install/FOUNDRY/digital/180nm/dig/lef/all.lef
+Ignore the 3rd block. In the 4th block, Power Net: VDD and Ground Net: VSS.
+Select Create Analysis Configuration…
+Right Click Library Sets and select New.
+	Name it max_timing. Press the '>>’ button. In Timing Library,
+Navigate to find the /install/FOUNDRY/digital/180nm/dig/lib/slow.lib file. 
+Add it and close the window.
+Repeat the same steps for min_timing and select fast.lib(in same directory as slow.lib).
+Right click Delay Corners and Select New.
+Name it max_timing(at top). Select max_timing in the Library Set. Close.
+Do the same for min_delay and choose min_timing instead.
+Right click the Constraints > New > Name it top > Add SDC file > the .sdc for synthesis.
+Right click Analysis Views > Name it setup > top > Delay Corner: max_delay.
+Repeat the step and name it hold. Choose top and Delay Corner as min_delay.
+Right click Setup Views and select setup. 
+Right click Hold Views and select hold.
+Save&Close. (OPTIONAL)Save with any name you want(add .view after your name).
+Save. (OPTIONAL)Save with any name you want(add .globals after your name).
+Close. The file should open on its own.
+Floorplan > Specify Floorplan.
+The parameters are project specific, so either use AI or use any values you want.
+File > Save Design > Select Innovus > Save as floorplan.enc
+Power > Power Planning > Add Ring.
+Nets: VDD VSS
+Top and Bottom: Metal5(H)
+Left and Right: Metal6(V)
+Offset to Center
+The Width and Spacing are project specific, but you can keep it 1.8 and press Update for default values. Press OK
+Power > Power Planning > Add Strip.
+	Nets: VDD VSS
+	Metal5 and Vertical(custom width or default values are okay as well).
+	Set Pattern > Number of sets > 3(can be custom as well). Press OK.
+Route > Special Route > Only add Nets > VDD VSS > OK.
+File > Save Design > Select Innovus > Save as powerplan.enc
+Place >Physical Cell > Add End Cap > FILL2 > OK.
+Place > Physical Cell > Add Well Tap > FILL2 > OK.
+File > Save Design > Select Innovus > Save as preplacement.enc
+EXPERIMENT 5
+
+Prepare project.v, project_tb.v and project_synth.v files. 
+Open terminal and type lec -gui
+In the TCL Command Window:
+read library home/installD/FOUNDRY/digital/180nm/RC_Libs/libraries/lib/STDCELL/slow.lib -liberty -both
+read design 4rca.v -golden -verilog
+read design rca_synth.v -revised -verilog
+set system mode lec
+add compared points -all compare 
+Exit Conformal after taking a screenshot of output and GUI Window.
+In the same terminal, enter the command from below,
+sed -E 's/(DFFTRX1|INVXL|INVX1|NAND2X1|AND2X2|OAI2BB2XL|OAI21XL|AOI2BB1XL)/\1M/g' rca_synth.v > rca_synth_fixed.v
+Your project might have extra Gates that require changes beyond the gates we include in the command. Use Gemini to check the gates to change the project_synth.v file.
+Run this command below:
+	xrun rca_tb.v rca_synth_fixed.v -v
+/install/FOUNDRY/digital/180nm/RC_Libs/libraries/verilog/tsmc13_m.v -timescale 1ns/1ps -access +rwc -gui
+Run the same steps from Experiment 2 to use Xcelium.
+Check if simulation from Experiment 2 is the same as the one here.
+
+
+EXPERIMENT 6
+
+Open the preplacement.enc by doing the below steps:
+Enter innovus in a terminal.
+File > Restore Design > Select Innovus > Select the preplacement.enc
+In the terminal, press enter to use the innovus command window. Type the below command:
+	setDesignMode -process 180
+Go back to Innovus GUI.
+Place > Place Standard Cells > Run Full Placement > Mode > Enable IO Pins and press OK.
+If you cannot see any wires, press the Physical View in the top right area to enable it.
+Press any wire and press Q. Check if the status is Routed. If not, there are errors in your current design stage. Refer to Gemini to remove these errors.
+Timing > Report Timing > Pre-CTS > setup > OK. Check Terminal for the report.
+File > Save Design > Select Innovus > Save as placement.enc
+Clock > Select the only option > OK. Take ss of the Clock Tree.
+Timing > Report Timing > Post-CTS > setup > OK. Check Terminal for the report.
+Timing > Report Timing > Post-CTS > hold > OK. Check Terminal for the report.
+ECO > Optimise Design > Post-CTS > Hold(Deselect setup) > OK. Check the terminal if there are any violating paths.
+File > Save Design > Select Innovus > Save as cts.enc
+Open your project directory. There should be a timingReport Folder.
+Inside that, there should be a counter_postCTS.summary.gz. Double click and a new file is created.
+Rename this file as STA.rpt
+
+EXPERIMENT 7
+
+In the same cts.enc file, continue this experiment.
+ECO > Optimization > Optimize Design > Post-Place > OK
+Route > Nanoroute > Route > Enable ‘Timing Driven’ > OK
+Tools > Set Mode > Specify Analysis Mode > Enable “Onchip Variation” > OK
+Timing > Report Timing > Post-Route > setup > OK. Check Terminal for the report.
+Timing > Report Timing > Post-Route > hold > OK. Check Terminal for the report.
+Place > Physical Cells > Add Filler > Select all FILL and Add > OK
+File > Save Design > Select Innovus > Save as route.enc
+File > Save… > Netlist > Save as project_postroute.v
+Type this command in innovus command window 
+
+
+       write_sdf rca_postroute.sdf   
+
+EXPERIMENT 8
+
+Continue in the same file. Open the innovus command window.
+Type command > verify_drc            ………… If there are violations, fix them by using Gemini.
+For violations- globalNetConnect VDD -type pgpin -pin VDD -inst * globalNetConnect VSS -type pgpin -pin VSS -inst *
+Type command > verifyGeometry   ………… Same as DRC.
+Type command > verify_antenna    ………… Same as DRC.
+EXPERIMENT 9
+
+Run these two commands 
+sed -E 's/(DFFTRX1|INVXL|INVX1|NAND2X1|AND2X2|OAI2BB2XL|OAI21XL|AOI2BB1XL)/\1M/g' rca_postroute.v > rca_postroute_fixed.v
+sed -E 's/(DFFTRX1|INVXL|INVX1|NAND2X1|AND2X2|OAI2BB2XL|OAI21XL|AOI2BB1XL)/\1M/g' rca_postroute.sdf > rca_postroute_fixed.sdf
+
+OR 
+
+sed -E "s/(DFFTRX1|INVXL|INVX1|NAND2X1|AND2X2|OAI2BB2XL|OAI21XL|AOI2BB1XL|ADDFX1|ADDFX2)/&M/g" rca_postroute.v > rca_postroute_fixed.v    	 
+sed -E "s/(DFFTRX1|INVXL|INVX1|NAND2X1|AND2X2|OAI2BB2XL|OAI21XL|AOI2BB1XL|ADDFX1|ADDFX2)/&M/g" rca_postroute.sdf > rca_postroute_fixed.sdf
+Edit the testbench file by adding: 
+initial begin
+    $sdf_annotate("project_postroute_fixed.sdf", top_instance_name.uut);
+end
+Top_instance_name.uut is the name of your testbench’s module name
+Use Xcelium for simulation:
+xrun -timescale 1ns/1ps rca_tb.v rca_postroute_fixed.v -v /install/FOUNDRY/digital/180nm/RC_Libs/libraries/verilog/tsmc13_m.v -access +rwc -gui
+
+Run the same steps from Experiment 2 to use Xcelium.
+Check if simulation from Experiment 2 is the same as the one here.
+
+
+EXPERIMENT 10
+Define Power Sources: Manually assign the voltage sources to the VDD and VSS nets. Run the following in innovus command terminal
+set_power_pads -net VDD -auto_voltage_source_creation true
+set_power_pads -net VSS -auto_voltage_source_creation true
+Generate Power Report: Execute the power calculation engine and save the output to a text file.
+report_power -outfile rca_power.rpt
+
+
+File > Save > GDS/OASIS... > Set Format to GDSII > Output File: counter.gds
+Browse to 180nm/pdk/ > Library Files: Add your standard cell .gds files > OK.
+If no Library is found, make a new file named cell_map.txt and select that in map file 
+Paste this in it:
+# Format: MAP <DesignCellName> <LibraryCellName>
+MAP DFFTRX1 	DFFTRX1M
+MAP INVXL   	INVXLM
+MAP INVX1   	INVX1M
+MAP NAND2X1 	NAND2X1M
+MAP AND2X2  	AND2X2M
+MAP OAI2BB2XL   OAI2BB2XLM
+MAP OAI21XL 	OAI21XLM
+MAP AOI2BB1XL   AOI2BB1XLM
+MAP FILL1   	FILL1M
+MAP FILL2   	FILL2M
+MAP FILL4   	FILL4M
+MAP FILL8   	FILL8M
+
+OR
+# Format: MAP <DesignCellName> <LibraryCellName>
+MAP DFFTRX1M     DFFTRX1
+MAP INVXLM  	 INVXL
+MAP INVX1M  	 INVX1
+MAP NAND2X1M     NAND2X1
+MAP AND2X2M 	 AND2X2
+MAP OAI2BB2XLM  OAI2BB2XL
+MAP OAI21XLM     OAI21XL
+MAP AOI2BB1XLM  AOI2BB1XL
+MAP ADDFX1M 	ADDFX1
+MAP ADDFX2M 	ADDFX2  
+MAP FILL1M 	 FILL1
+MAP FILL2M 	 FILL2
+MAP FILL4M 	 FILL4
+MAP FILL8M 	 FILL8
+The Location of M could be reversed on either side but remember the M version (M suffix on Gate Names)  should be there on the code blocks in rca_postrout_fixed.v which was created via sed command. 
+Then save it.
+Select the cell_map.txt in it and set the following:
+
+
+Verilog code for RCA:
+
+`timescale 1ns/1ps
+
+// Full Adder Sub-Module
+module full_adder (
+    input a, b, cin,
+    output sum, cout
+);
+    // Dataflow modeling for perfect gate-level synthesis
+    assign sum = a ^ b ^ cin;
+    assign cout = (a & b) | (b & cin) | (a & cin);
+endmodule
+
+// 4-bit Ripple Carry Adder Top Module
+module rca_4bit (
+    input  [3:0] a,
+    input  [3:0] b,
+    input        cin,
+    output [3:0] sum,
+    output       cout
+);
+    // Internal carry wires
+    wire c1, c2, c3;
+
+    // Structural instantiation mapping exactly to standard cells
+    full_adder fa0 (.a(a[0]), .b(b[0]), .cin(cin), .sum(sum[0]), .cout(c1));
+    full_adder fa1 (.a(a[1]), .b(b[1]), .cin(c1),  .sum(sum[1]), .cout(c2));
+    full_adder fa2 (.a(a[2]), .b(b[2]), .cin(c2),  .sum(sum[2]), .cout(c3));
+    full_adder fa3 (.a(a[3]), .b(b[3]), .cin(c3),  .sum(sum[3]), .cout(cout));
+endmodule
+
+
+
+
+
+
+
+Testbench :
+`timescale 1ns/1ps
+
+module rca_4bit_tb;
+    // Testbench variables
+    reg  [3:0] a = 4'd0;
+    reg  [3:0] b = 4'd0;
+    reg        cin = 1'b0;
+    wire [3:0] sum;
+    wire       cout;
+
+    // Instantiate the Unit Under Test (UUT)
+    rca_4bit uut (
+        .a(a),
+        .b(b),
+        .cin(cin),
+        .sum(sum),
+        .cout(cout)
+    );
+
+    initial begin
+        // Enable waveform dumping for Xcelium GUI viewing
+        //$dumpfile("rca_waves.vcd");
+        //$dumpvars(1, rca_4bit_tb);
+
+        // Print outputs to the terminal
+        $monitor("Time=%0t | A=%d B=%d Cin=%b | Sum=%d Cout=%b", $time, a, b, cin, sum, cout);
+
+        // Test Vectors
+        a = 4'd0;  b = 4'd0;  cin = 1'b0; #10;
+        a = 4'd5;  b = 4'd3;  cin = 1'b0; #10; // 5 + 3 = 8
+        a = 4'd15; b = 4'd1;  cin = 1'b0; #10; // 15 + 1 = 16 (Sum=0, Cout=1)
+        a = 4'd10; b = 4'd5;  cin = 1'b1; #10; // 10 + 5 + 1 = 16 (Sum=0, Cout=1)
+        a = 4'd7;  b = 4'd8;  cin = 1'b0; #10; // 7 + 8 = 15 (Sum=15, Cout=0)
+       
+        #10 $finish;
+    end
+    // =======================================================
+    // EXPERIMENT 9: POST-ROUTE SDF ANNOTATION
+    // =======================================================
+    // When you reach Experiment 9, remove the "//" from the
+    // initial block below so Xcelium can read your delays.
+    // Notice it matches your top_instance_name.uut (rca_4bit_tb.uut)
+   
+  //initial begin
+        //$sdf_annotate("project_postroute_fixed.sdf", rca_4bit_tb.uut);
+    //end
+
+endmodule
+
+constraints.sdc :
+
+# 1. Define a Virtual Clock
+# Since RCA is combinational, we create a clock to serve as a timing reference.
+# Period of 10.0ns = 100MHz target frequency.
+create_clock -name virtual_clk -period 10.0
+
+# 2. Constrain Input Paths
+# Assume inputs (a, b, cin) arrive 2ns after the start of the clock cycle.
+set_input_delay -clock virtual_clk 2.0 [get_ports {a[*]}]
+set_input_delay -clock virtual_clk 2.0 [get_ports {b[*]}]
+set_input_delay -clock virtual_clk 2.0 [get_ports {cin}]
+
+# 3. Constrain Output Paths
+# Assume outputs (sum, cout) must be stable 2ns before the next clock cycle.
+set_output_delay -clock virtual_clk 2.0 [get_ports {sum[*]}]
+set_output_delay -clock virtual_clk 2.0 [get_ports {cout}]
+
+# 4. Max Delay (The "Critical Path" Constraint)
+# This is vital for RCA. It ensures the carry ripple from a[0] to cout
+# does not exceed a specific time (e.g., 8ns).
+set_max_delay 8.0 -from [all_inputs] -to [all_outputs]
+
+# 5. Environment and Loads
+# Set a typical load on output pins to simulate real-world wire capacitance.
+set_load 0.1 [all_outputs]
+
+# Set the driving strength of the input signals
+set_driving_cell -lib_cell BUFX2 [all_inputs] 
